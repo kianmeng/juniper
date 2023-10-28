@@ -18,6 +18,9 @@ eq = $(if $(or $(1),$(2)),$(and $(findstring $(1),$(2)),\
 book: book.build
 
 
+codespell: book.codespell
+
+
 fmt: cargo.fmt
 
 
@@ -94,7 +97,7 @@ ifeq ($(clean),yes)
 	cargo clean
 endif
 	$(eval target := $(strip $(shell cargo -vV | sed -n 's/host: //p')))
-	cargo build
+	cargo build --all-features
 	mdbook test book -L target/debug/deps $(strip \
 		$(if $(call eq,$(findstring windows,$(target)),),,\
 			$(shell cargo metadata -q \
@@ -137,6 +140,15 @@ book.build:
 	mdbook build book/ $(if $(call eq,$(out),),,-d $(out))
 
 
+# Spellcheck Book.
+#
+# Usage:
+#	make book.codespell [fix=(no|yes)]
+
+book.codespell:
+	codespell book/ $(if $(call eq,$(fix),yes),--write-changes,)
+
+
 # Serve Book on some port.
 #
 # Usage:
@@ -148,11 +160,40 @@ book.serve:
 
 
 
+######################
+# Forwarded commands #
+######################
+
+# Download and prepare actual version of GraphiQL static files, used for
+# integrating it.
+#
+# Usage:
+#	make graphiql
+
+graphiql:
+	@cd juniper/ && \
+	make graphiql
+
+
+# Download and prepare actual version of GraphQL Playground static files, used
+# for integrating it.
+#
+# Usage:
+#	make graphql-playground
+
+graphql-playground:
+	@cd juniper/ && \
+	make graphql-playground
+
+
+
+
 ##################
 # .PHONY section #
 ##################
 
-.PHONY: book fmt lint release test \
-        book.build book.serve \
+.PHONY: book codespell fmt lint release test \
+        book.build book.codespell book.serve \
         cargo.fmt cargo.lint cargo.release cargo.test \
+        graphiql graphql-playground \
         test.book test.cargo
